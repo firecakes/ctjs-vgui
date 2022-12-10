@@ -50,13 +50,13 @@ This API reference is taken from the `types.d.ts` file that comes with the catmo
 * recalculates the textbox dimensions, style, and text positioning
 
 ## `step()`
-* call this method on the step event of your template. updates focus, text and cursor
+* call this method on the Frame start event of your template. updates focus, text and cursor
 
 ## `isFocused`
 * whether the textbox will accept input. automatically handled by the library depending where the user clicks
 
 ## `cursorPosition`
-* which character in the string to add/remove text to. automatically handle by the library
+* which character in the string to add/remove text to. automatically handled by the library
 
 ## `container`
 * top level graphics for the textbox, text and cursor

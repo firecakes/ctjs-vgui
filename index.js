@@ -19,7 +19,7 @@
             this.maxCharsInBox = 0 // figures out the number of characters that can be rendered within the textbox at runtime
             this.isFocused = false // whether the user wants to type with the textbox
             this.parent = template // for getting the collision boundaries of the textbox
-            this.cursorPosition = 0 // which character in the string to add/remove text to
+            this.cursorPosition = this.props.trueText.length // which character in the string to add/remove text to. start the cursor at the end of the string
             this.useDefaultCursor = false // whether to let this class render its own cursor
 
             this.container = new PIXI.Container() // graphics for the textbox, text and cursor
@@ -32,6 +32,7 @@
             this.textInput = new PIXI.Text(this.displayText, this.props.font)
             this.textInput.x = this.props.offsetX
             this.textInput.y = (this.props.height / 2) - (this.textInput.height / 2) + this.props.offsetY
+            this.textInput.alpha = 1
             this.container.addChild(this.textInput)
 
             // hidden text that renders only up to the cursor position. this is so that the cursor renders at the right position
@@ -135,6 +136,7 @@
             // cursor update logic
             if (ct.keyboard.lastKey === 'ArrowLeft') {
                 this.cursorPosition -= 1 // move cursor left
+                this.cursorPosition = Math.max(0, this.cursorPosition)
             }
             if (ct.keyboard.lastKey === 'ArrowRight') {
                 this.cursorPosition += 1 // move cursor right
@@ -162,33 +164,21 @@
         }
 
         // update the display text to render it nicely in the textbox
-        truncateText() {
+        truncateText () {
             // detect if the text is near the end of the textbox, and truncate further to keep all text within the box
             if (this.textInput.width + this.props.lengthThresholdOffset > this.props.width) {
-                this.displayText = this.displayText.slice(0, this.maxCharsInBox)
                 if (this.props.trueText.length > this.maxCharsInBox) {
-                    this.textInput.text = this.displayText + ".."
-                } else {
-                    this.textInput.text = this.displayText
+                    this.displayText = this.displayText.slice(0, this.maxCharsInBox) + ".."
                 }
             } else {
-                this.textInput.text = this.displayText
+                this.displayText = this.props.trueText
                 this.maxCharsInBox = this.textInput.text.length
-            } 
-
-            // detect if the text is near the end of the textbox, and truncate further to keep all text within the box
-            if (this.hiddenInput.width + this.props.lengthThresholdOffset > this.props.width) {
-                if (this.props.trueText.length > this.maxCharsInBox) {
-                    this.hiddenInput.text = this.displayText + ".."
-                } else {
-                    this.hiddenInput.text = this.displayText
-                }
-            } else {
-                this.hiddenInput.text = this.displayText
-                this.maxCharsInBox = this.hiddenInput.text.length
             }
-            // cut off the text up to the cursor position so it's known where to render the cursor
-            this.hiddenInput.text = this.hiddenInput.text.slice(0, this.cursorPosition)
+
+            // render the truncated text
+            this.textInput.text = this.displayText
+            // cut off the text up to the cursor position so it's known where to render the cursor, or to the end of the text box plus one of the periods
+            this.hiddenInput.text = this.displayText.slice(0, Math.min(this.maxCharsInBox + 1, this.cursorPosition))
         }
 
         // draw the cursor if the user requested this class to do it for them
@@ -197,7 +187,9 @@
                 return;
             }
             this.cursor.beginFill(0x00000)
-            this.cursor.drawRect(this.hiddenInput.width + 5, 2, 2, this.hiddenInput.height);
+            // draw it with an x offset only if the cursor is not at the complete left
+            const xOffset = this.cursorPosition === 0 ? this.hiddenInput.x : this.hiddenInput.width + 6
+            this.cursor.drawRect(xOffset, 2, 2, this.hiddenInput.height);
             this.cursor.endFill();
         }
 

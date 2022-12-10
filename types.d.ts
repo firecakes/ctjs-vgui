@@ -4,47 +4,48 @@ declare namespace ct {
      */
     namespace vgui {
 
-        /**
-         * Creates a text box that accepts keyboard input
-         * @param {object} template Pass "this" into this argument so that collision boundaries can be obtained
-         * @param {TextBoxProps} props Extra configuration goes here
-         */
-        function TextBox(template: object, props: TextBoxProps) : TextBox
+        class TextBox {
+
+            /**
+             * Creates a text box that accepts keyboard input
+             * @param {object} template Pass "this" into this argument so that collision boundaries can be obtained
+             * @param {TextBoxProps} props Extra configuration goes here
+             */
+            constructor(template: object, props: TextBoxProps);
+
+            /**
+             * for when you're too lazy to make your own textbox graphics. only invoke once
+             */
+            useDefaultBoxGraphics(): void;
+            /**
+             * for when you're too lazy to make your own textbox graphics. only invoke once
+             */
+            useDefaultCursorGraphics(): void;
+            /**
+             * recalculates the textbox dimensions, style, and text positioning
+             */
+            reload(): void;
+            /**
+             * call this method on the Frame start of your template. updates focus, text and cursor
+             */
+            step(): void;
+            /** whether the textbox will accept input. automatically handled by the library depending where the user clicks */
+            isFocused: boolean;
+            /** which character in the string to add/remove text to. automatically handled by the library */
+            cursorPosition: number;
+            /** top level graphics for the textbox, text and cursor */
+            container: PIXI.Container;
+            /** textbox graphics */
+            textGraphics: PIXI.Graphics;
+            /** text input font. this is what the user sees */
+            textInput: PIXI.Text;
+            /** hidden text font that renders only up to the cursor position. this is so that the cursor renders at the right position */
+            hiddenInput: PIXI.Text;
+            /** cursor graphics */
+            cursor: PIXI.Graphics;
+        }
 
     }
-}
-
-interface TextBox {
-    /**
-     * for when you're too lazy to make your own textbox graphics. only invoke once
-     */
-    useDefaultBoxGraphics();
-    /**
-     * for when you're too lazy to make your own textbox graphics. only invoke once
-     */
-    useDefaultCursorGraphics();
-    /**
-     * recalculates the textbox dimensions, style, and text positioning
-     */
-    reload();
-    /**
-     * call this method on the step event of your template. updates focus, text and cursor
-     */
-    step();
-    /** whether the textbox will accept input. automatically handled by the library depending where the user clicks */
-    isFocused: boolean;
-    /** which character in the string to add/remove text to. automatically handle by the library */
-    cursorPosition: number;
-    /** top level graphics for the textbox, text and cursor */
-    container: PIXI.Container;
-    /** textbox graphics */
-    textGraphics: PIXI.Graphics;
-    /** text input font. this is what the user sees */
-    textInput: PIXI.Text;
-    /** hidden text font that renders only up to the cursor position. this is so that the cursor renders at the right position */
-    hiddenInput: PIXI.Text;
-    /** cursor graphics */
-    cursor: PIXI.Graphics;
 }
 
 interface TextBoxProps {

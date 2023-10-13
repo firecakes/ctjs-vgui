@@ -1,4 +1,13 @@
 (function () {
+    const InventoryEvent = {
+        SELECT: "select",
+        ACTION: "action",
+        ADD: "add",
+        REMOVE: "remove",
+        MOVE_FROM: "moveFrom",
+        MOVE_TO: "moveTo"
+    }
+
     class TextBox {
         constructor (template, props = {}) {
             this.props = {
@@ -199,7 +208,167 @@
         }
     }
 
+    class Inventory {
+
+        constructor () {
+            this.selectedIndex = null;
+            this.cells = [];
+            this.listeners = [];
+            this.moveIndex = null;
+            this.allowMoving = true;
+        }
+
+        setSize (inventorySize, cb, defaultGraphics = null) {  // initializes drawing of the inventory
+            for (let i = 0; i < inventorySize; i++) {
+                if (this.cells[i]) {
+                    continue;
+                }
+                const cellCopy = cb(i);
+                cellCopy.cellIndex = i;
+                if (defaultGraphics != null) { // create our own graphics representing inventory slots
+                    const inventoryGraphics = new PIXI.Graphics();
+                    inventoryGraphics.lineStyle(4, 0x000000, 1);
+                    inventoryGraphics.beginFill(0xFFFFFF, 1);
+                    inventoryGraphics.drawRect(0, 0, defaultGraphics.width, defaultGraphics.height);
+                    inventoryGraphics.endFill();
+                    cellCopy.addChild(inventoryGraphics);
+                }
+                this.cells.push(cellCopy);
+            }
+            // remove cells past the inventory size limit
+            for (let i = inventorySize; i < this.cells.length; i++) {
+                this.cells[i].kill = true
+            }
+            this.cells.splice(inventorySize, this.cells.length - inventorySize);
+            // check selectedIndex and moveIndex for potential out of bounds errors
+            if (!this.cells[this.selectedIndex]) {
+                this.selectedIndex = null;
+            }
+            if (!this.cells[this.moveIndex]) {
+                this.moveCancel();
+            }
+        }
+
+        add (index, textureName, templateName) {// adds and draws an item to the inventory
+            if (!this.cells[index]) return;
+            const cell = this.cells[index];
+
+            if (templateName) {
+                cell.inventoryTemplateName = templateName;
+            } 
+            if (textureName) {
+                const texture = new PIXI.Sprite(ct.res.getTexture(textureName, 0))
+                cell.inventoryTextureName = textureName;
+                cell.inventoryTexture = texture;
+                cell.addChild(texture);
+            }
+            this.listeners.forEach(listener => {
+                listener(InventoryEvent.ADD, cell);
+            });
+        }
+
+        push (textureName, templateName) {
+            for (let i = 0; i < this.cells.length; i++) {
+                if (!this.cells[i].inventoryTemplateName) {
+                    this.add(i, textureName, templateName);
+                    break;
+                }
+            }
+        }
+
+        listen (cb) { // adds a listener for event propagation
+            this.listeners.push(cb);
+
+        }
+
+        removeListener (cb) { // removes a listener from event propagation
+            this.listeners = this.listeners.filter(func => func !== cb);
+        }
+
+        clearListeners () {
+            this.listeners = []
+        }
+
+        select (index) { // the player has selected this item in the inventory
+            this.selectedIndex = index;
+            if (!this.cells[index]) return;
+            const cell = this.cells[index];
+            this.listeners.forEach(listener => {
+                listener(InventoryEvent.SELECT, cell);
+            });
+        }
+
+        action (index) { // the player wants to use this item in the inventory
+            if (!this.cells[index]) return;
+            const cell = this.cells[index];
+            this.listeners.forEach(listener => {
+                listener(InventoryEvent.ACTION, cell);
+            });
+        }
+
+        remove (index) { // the player wants to remove this item from the inventory
+            if (!this.cells[index]) return;
+            const cell = this.cells[index];
+            this.listeners.forEach(listener => {
+                listener(InventoryEvent.REMOVE, cell);
+            });
+            cell.removeChild(cell.inventoryTexture);
+            cell.inventoryTextureName = null;
+            cell.inventoryTexture = null;
+            cell.inventoryTemplateName = null;
+        }
+
+        moveFrom (index) { // the player is signalling an intent to move an item from here
+            if (!this.cells[index]) return;
+            const cell = this.cells[index];
+            this.moveIndex = index;
+
+            if (!this.allowMoving) return;
+
+            this.listeners.forEach(listener => {
+                listener(InventoryEvent.MOVE_FROM, cell);
+            });
+        }
+
+        moveTo (index) { // the player is signalling an intent to move an item to here
+            if (!this.cells[index]) return;
+            const cell = this.cells[index];
+            
+            if (!this.allowMoving) {
+                this.moveIndex = null;
+                return;
+            };
+
+            this.listeners.forEach(listener => {
+                listener(InventoryEvent.MOVE_TO, cell);
+            });
+
+            if (this.moveIndex === null || this.moveIndex === index) {
+                return;
+            }
+
+            const targetTextureName = cell.inventoryTextureName;
+            const targetInventoryTemplateName = cell.inventoryTemplateName;
+
+            const sourceTextureName = this.cells[this.moveIndex].inventoryTextureName;
+            const sourceInventoryTemplateName = this.cells[this.moveIndex].inventoryTemplateName;
+        
+            this.remove(index);
+            this.remove(this.moveIndex);
+            this.add(this.moveIndex, targetTextureName, targetInventoryTemplateName);        
+            this.add(index, sourceTextureName, sourceInventoryTemplateName);
+
+            this.moveIndex = null;
+        }
+
+        moveCancel () { // the player does not wish to move an item anymore
+            this.moveIndex = null;
+        }
+    }
+
     ct.vgui = {
         TextBox: TextBox,
+        Inventory: Inventory,
+        InventoryEvent: InventoryEvent
     }
 })();

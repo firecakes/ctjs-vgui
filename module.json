@@ -2,7 +2,7 @@
     "main": {
         "name": "ct.vgui",
         "tagline": "Vector Graphics User Interface library",
-        "version": "1.0.1",
+        "version": "1.1.0",
         "authors": [{
             "name": "Firecakes"
         }],
